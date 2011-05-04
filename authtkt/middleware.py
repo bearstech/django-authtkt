@@ -17,10 +17,11 @@ class AuthTktMiddleware(object):
 
     plugin = AuthTktCookiePlugin(settings.SECRET_KEY, **getattr(settings, 'AUTHTKT_OPTIONS', {}))
     callback = resolve(getattr(settings, 'AUTHTKT_CALLBACK', None))
-    cookie_type = {'domain': 1, 'subdomain':2}.get(getattr(settings, 'AUTHTKT_DOMAIN', 0))
+    cookie_type = {'domain': 1, 'subdomain':2}.get(getattr(settings, 'AUTHTKT_DOMAIN', 0), 0)
 
     def process_request(self, request):
         identity = self.plugin.identify(request.environ.copy())
+        import pdb;pdb.set_trace()
         if identity and 'repoze.who.plugins.auth_tkt.userid' in identity:
             user_id = identity['repoze.who.plugins.auth_tkt.userid']
             try:
@@ -32,7 +33,10 @@ class AuthTktMiddleware(object):
             request.user = user
 
     def process_response(self, request, response):
-        print 'before', response._headers
+        if request.user.is_anonymous() and self.plugin.cookie_name not in request.COOKIES:
+            cookies = plugin.forget(environ, {})
+            header, value = cookies[self.cookie_type]
+            response[header] = value
         if not request.user.is_anonymous() and self.plugin.cookie_name not in request.COOKIES:
             user = request.user
             identity = {

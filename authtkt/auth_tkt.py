@@ -7,9 +7,6 @@ import time
 from paste.request import get_cookies
 from paste.auth import auth_tkt
 
-from zope.interface import implements
-
-
 _NOW_TESTING = None  # unit tests can replace
 def _now():  #pragma NO COVERAGE
     if _NOW_TESTING is not None:
