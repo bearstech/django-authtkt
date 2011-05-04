@@ -37,7 +37,6 @@ class AuthTktMiddleware(object):
             user = request.user
             identity = {
                     'repoze.who.userid': user.id,
-                    'userdata':'toto',
                     }
             cookies = self.plugin.remember(request.environ, identity)
             header, value = cookies[self.cookie_type]
