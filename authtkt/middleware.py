@@ -15,13 +15,13 @@ def resolve(module):
 
 class AuthTktMiddleware(object):
 
-    plugin = AuthTktCookiePlugin(settings.SECRET_KEY)
+    plugin = AuthTktCookiePlugin(settings.SECRET_KEY, **getattr(settings, 'AUTHTKT_OPTIONS', {}))
     callback = resolve(getattr(settings, 'AUTHTKT_CALLBACK', None))
     cookie_type = {'domain': 1, 'subdomain':2}.get(getattr(settings, 'AUTHTKT_DOMAIN', 0))
 
     def process_request(self, request):
         identity = self.plugin.identify(request.environ.copy())
-        if identity:
+        if identity and 'repoze.who.plugins.auth_tkt.userid' in identity:
             user_id = identity['repoze.who.plugins.auth_tkt.userid']
             try:
                 user = User.objects.get(id=user_id)
