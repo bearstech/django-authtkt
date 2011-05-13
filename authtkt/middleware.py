@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from django.conf import settings
 from django.utils import simplejson
+from django.conf import settings
 from authtkt.auth_tkt import AuthTktCookiePlugin
 
 def resolve(module):
@@ -13,6 +13,8 @@ def resolve(module):
     def empty(user):
         return user
     return empty
+
+LOGOUT_URL = '/logout'
 
 class AuthTktMiddleware(object):
 
@@ -41,11 +43,11 @@ class AuthTktMiddleware(object):
         except AttributeError:
             id = None
             is_anon = True
-        if is_anon and self.plugin.cookie_name not in request.COOKIES:
+        if LOGOUT_URL in request.META['PATH_INFO']:
             cookies = self.plugin.forget(request.environ, {})
             header, value = cookies[self.cookie_type]
             response[header] = value
-        if not is_anon and self.plugin.cookie_name not in request.COOKIES:
+        elif not is_anon and self.plugin.cookie_name not in request.COOKIES:
             identity = {
                     'repoze.who.userid': request.user.id,
                     }
