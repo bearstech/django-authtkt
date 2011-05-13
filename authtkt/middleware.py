@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 from django.utils import simplejson
 from django.conf import settings
 from authtkt.auth_tkt import AuthTktCookiePlugin
+import logging
+
+log = logging.getLogger(__name__)
 
 def resolve(module):
     if module:
@@ -29,7 +32,7 @@ class AuthTktMiddleware(object):
             try:
                 user = User.objects.get(id=user_id)
             except User.DoesNotExist:
-                user = User(id=id)
+                user = User(id=user_id)
                 self.callback(user)
                 user.save()
             user.backend='django.contrib.auth.backends.ModelBackend'
