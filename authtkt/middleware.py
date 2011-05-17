@@ -25,6 +25,21 @@ class AuthTktMiddleware(object):
     callback = staticmethod(resolve(getattr(settings, 'AUTHTKT_CALLBACK', None)))
     cookie_type = {'domain': 1, 'subdomain':2}.get(getattr(settings, 'AUTHTKT_DOMAIN', 0), 0)
 
+    def identify(self, request, response):
+        identity = {
+                'repoze.who.userid': request.user.id,
+                }
+        cookies = self.plugin.remember(request.environ, identity)
+        header, value = cookies[self.cookie_type]
+        response[header] = value
+        request.environ['authtkt.processed'] = True
+
+    def forget(self, request, response):
+        cookies = self.plugin.forget(request.environ, {})
+        header, value = cookies[self.cookie_type]
+        response[header] = value
+        request.environ['authtkt.processed'] = True
+
     def process_request(self, request):
         identity = self.plugin.identify(request.environ.copy())
         if identity and 'repoze.who.plugins.auth_tkt.userid' in identity:
@@ -38,25 +53,21 @@ class AuthTktMiddleware(object):
             user.backend='django.contrib.auth.backends.ModelBackend'
             login(request, user)
             request.user = user
+        request.environ['authtkt.identify'] = self.identify
+        request.environ['authtkt.forget'] = self.forget
 
     def process_response(self, request, response):
-        try:
-            id = request.user.id
-            is_anon = request.user.is_anonymous()
-        except AttributeError:
-            id = None
-            is_anon = True
-        if LOGOUT_URL in request.META['PATH_INFO']:
-            cookies = self.plugin.forget(request.environ, {})
-            header, value = cookies[self.cookie_type]
-            response[header] = value
-        elif not is_anon and self.plugin.cookie_name not in request.COOKIES:
-            identity = {
-                    'repoze.who.userid': request.user.id,
-                    }
-            cookies = self.plugin.remember(request.environ, identity)
-            header, value = cookies[self.cookie_type]
-            response[header] = value
+        if request.environ.get('authtkt.processed', False) is not True:
+            try:
+                id = request.user.id
+                is_anon = request.user.is_anonymous()
+            except AttributeError:
+                id = None
+                is_anon = True
+            if LOGOUT_URL in request.META['PATH_INFO']:
+                self.forget(request, response)
+            elif not is_anon and self.plugin.cookie_name not in request.COOKIES:
+                self.identify(request, response)
         return response
 
 
