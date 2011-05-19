@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.2'
+version = '0.3'
 
 setup(name='django-authtkt',
       version=version,
@@ -21,6 +21,7 @@ setup(name='django-authtkt',
       zip_safe=False,
       install_requires=[
           # -*- Extra requirements: -*-
+          'Paste',
       ],
       entry_points="""
       # -*- Entry points: -*-
